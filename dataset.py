@@ -3,11 +3,25 @@ import torch
 import os
 import pickle
 from torch.utils.data import Dataset, DataLoader
+import torchvision.transforms as T
+import matplotlib.pyplot as plt
+import PIL
+
 
 class CIFAR10Dataset(Dataset):
 	def __init__(self, directory_path='/Users/joshua/env/datasets/cifar_10'):
 		labels_tensor_list = []
 		image_tensor_list = []
+
+		# define image transforms
+		self.horizontal_flip = T.RandomHorizontalFlip(p=0.5)
+		self.vertical_flip = T.RandomVerticalFlip(p=0.2)
+		#self.jitter = T.ColorJitter(brightness=0.9, hue=0.5)
+		#self.blurrer = T.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5))
+		#self.resize_cropper = T.RandomResizedCrop(size=(32, 32))
+		self.to_pil = T.ToPILImage()
+
+
 
 		# get a list of files in the directory
 		file_batches = os.listdir(directory_path)
@@ -28,7 +42,7 @@ class CIFAR10Dataset(Dataset):
 
 		# stack the list of tensors into one large tensor
 		self.labels = torch.stack(labels_tensor_list).view(-1)
-		self.images = torch.stack(image_tensor_list).view(-1, 3, 1024)
+		self.images = torch.stack(image_tensor_list).view(-1, 3, 32, 32)
 
 	def open_batch(self, filepath):
 		with open(filepath, 'rb') as fo:
@@ -39,7 +53,7 @@ class CIFAR10Dataset(Dataset):
 		labels = torch.Tensor(batch[b'labels'])
 
 		images = torch.Tensor(batch[b'data'])
-		images = images.view(-1, 3, 1024)
+		images = images.view(-1, 3, 32, 32)
 
 		return images, labels
 
@@ -47,9 +61,18 @@ class CIFAR10Dataset(Dataset):
 		return self.labels.shape[0]
 
 	def apply_image_transforms(self, image):
-		# TODO add transforms
+		image = self.horizontal_flip(image)
+		image = self.vertical_flip(image)
+		#image = self.jitter(image)     Makes the transformed image black
+		#image = self.blurrer(image)    Resolution too low
+		#image = self.resize_cropper(image)
 		return image
 
+	def show_image(self, image):
+		pil_image = self.to_pil(image)
+		pil_image = PIL.ImageOps.invert(pil_image)
+		plt.imshow(pil_image)
+		plt.show()
 
 	def __getitem__(self, idx):
 		image = self.images[idx]
@@ -57,6 +80,7 @@ class CIFAR10Dataset(Dataset):
 
 		image = self.apply_image_transforms(image)
 
-		return image, label
 
-CIFAR10Dataset()
+		exit()
+
+		return image, label
