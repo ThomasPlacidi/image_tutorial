@@ -80,7 +80,4 @@ class CIFAR10Dataset(Dataset):
 
 		image = self.apply_image_transforms(image)
 
-
-		exit()
-
 		return image, label
