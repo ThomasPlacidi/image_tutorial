@@ -9,40 +9,49 @@ import PIL
 
 
 class CIFAR10Dataset(Dataset):
-	def __init__(self, directory_path='/Users/joshua/env/datasets/cifar_10'):
-		labels_tensor_list = []
-		image_tensor_list = []
+	def __init__(self, directory_path='/Users/joshua/env/datasets/cifar_10', sample_set='train'):
+		self.sample_set = sample_set	
+	
+		# this code gets run if we are loading data to train with
+		if self.sample_set == 'train':
 
-		# define image transforms
-		self.horizontal_flip = T.RandomHorizontalFlip(p=0.5)
-		self.vertical_flip = T.RandomVerticalFlip(p=0.2)
-		#self.jitter = T.ColorJitter(brightness=0.9, hue=0.5)
-		#self.blurrer = T.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5))
-		#self.resize_cropper = T.RandomResizedCrop(size=(32, 32))
-		self.to_pil = T.ToPILImage()
+			labels_tensor_list = []
+			image_tensor_list = []
 
+			# define image transforms
+			self.horizontal_flip = T.RandomHorizontalFlip(p=0.5)
+			self.vertical_flip = T.RandomVerticalFlip(p=0.2)
+			#self.jitter = T.ColorJitter(brightness=0.9, hue=0.5)
+			#self.blurrer = T.GaussianBlur(kernel_size=(5, 9), sigma=(0.1, 5))
+			#self.resize_cropper = T.RandomResizedCrop(size=(32, 32))
+			self.to_pil = T.ToPILImage()
 
+			# get a list of files in the directory
+			file_batches = os.listdir(directory_path)
 
-		# get a list of files in the directory
-		file_batches = os.listdir(directory_path)
+			# only keep the data files
+			file_batches = [f for f in file_batches if f.startswith('data')]
 
-		# only keep the data files
-		file_batches = [f for f in file_batches if f.startswith('data')]
+			# loop over each file batch
+			for file_path in file_batches:
 
-		# loop over each file batch
-		for file_path in file_batches:
-
-			# open data batch
-			data_batch = self.open_batch(directory_path + '/' + file_path)
+				# open data batch
+				data_batch = self.open_batch(directory_path + '/' + file_path)
 			
-			# process data batch
-			images, labels = self.process_batch(data_batch)		
-			image_tensor_list.append(images)
-			labels_tensor_list.append(labels)	
+				# process data batch
+				images, labels = self.process_batch(data_batch)		
+				image_tensor_list.append(images)
+				labels_tensor_list.append(labels)	
 
-		# stack the list of tensors into one large tensor
-		self.labels = torch.stack(labels_tensor_list).view(-1)
-		self.images = torch.stack(image_tensor_list).view(-1, 3, 32, 32)
+			# stack the list of tensors into one large tensor
+			self.labels = torch.stack(labels_tensor_list).view(-1)
+			self.images = torch.stack(image_tensor_list).view(-1, 3, 32, 32)
+
+		elif self.sample_set == 'test':
+			test_batch = self.open_batch(directory_path + '/test_batch')
+			self.images, self.labels = self.process_batch(test_batch)
+
+
 
 	def open_batch(self, filepath):
 		with open(filepath, 'rb') as fo:
@@ -78,6 +87,8 @@ class CIFAR10Dataset(Dataset):
 		image = self.images[idx]
 		label = self.labels[idx]
 
-		image = self.apply_image_transforms(image)
+		if self.sample_set == 'train':
+			image = self.apply_image_transforms(image)
 
 		return image, label
+
