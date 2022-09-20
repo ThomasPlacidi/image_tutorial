@@ -71,5 +71,7 @@ def train(model, train_dataloader, test_dataloader, num_epochs=10, iteration_ste
 				train_loss = 0
 				train_correct = 0
 				train_total = 0
+				train_correct = 0
+				train_total = 0
 
 	print('finished training')	
